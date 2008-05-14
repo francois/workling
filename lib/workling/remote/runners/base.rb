@@ -13,7 +13,7 @@ module Workling
         end
                 
         def logger
-          ::RAILS_DEFAULT_LOGGER
+          Workling::Base.logger
         end
         
         private

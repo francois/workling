@@ -13,6 +13,10 @@ module Workling
         @routing = routing
         @workers = ThreadGroup.new
       end
+
+      def logger
+        Workling::Base.logger
+      end
     
       def listen
 
@@ -53,7 +57,7 @@ module Workling
             # If you don't do anything for a while, mysql will drop you. Make sure it stays around.
             unless ActiveRecord::Base.connection.active?
               unless ActiveRecord::Base.connection.reconnect!
-                RAILS_DEFAULT_LOGGER.fatal("FAILED - Database not available")
+                logger.fatal("FAILED - Database not available")
                 break
               end
             end
@@ -87,14 +91,14 @@ module Workling
               n += 1
               handler = clazz_routing[queue]
               method_name = clazz_routing.method_name(queue)
-              RAILS_DEFAULT_LOGGER.debug("\n*****************\nCalling #{handler.class.to_s}\##{method_name}(#{result.inspect})\n*****************\n")
+              logger.debug("\n*****************\nCalling #{handler.class.to_s}\##{method_name}(#{result.inspect})\n*****************\n")
               handler.send(method_name, result)
             end
           rescue MemCache::MemCacheError => e
-            RAILS_DEFAULT_LOGGER.error("FAILED to connect with queue #{ queue }: #{ e } }")
+            logger.error("FAILED to connect with queue #{ queue }: #{ e } }")
             raise e
           rescue Object => e
-            RAILS_DEFAULT_LOGGER.error("FAILED to process queue #{ queue }. #{ clazz_routing[queue] } could not handle invocation of #{ clazz_routing.method_name(queue) } with #{ result.inspect }: #{ e }.\n#{ e.backtrace.join("\n") }")
+            logger.error("FAILED to process queue #{ queue }. #{ clazz_routing[queue] } could not handle invocation of #{ clazz_routing.method_name(queue) } with #{ result.inspect }: #{ e }.\n#{ e.backtrace.join("\n") }")
           end
         end
         
